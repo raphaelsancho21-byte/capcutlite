@@ -8,6 +8,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: capcut2-preparado-para-apk/capcut2-apk-build
+
     steps:
       - name: Baixar projeto
         uses: actions/checkout@v4
@@ -23,12 +27,21 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Verificar arquivos
+        run: |
+          pwd
+          ls -la
+          test -f package.json
+          test -f capacitor.config.json
+
       - name: Instalar dependencias
         run: npm install
 
       - name: Preparar Android
         run: |
-          npx cap add android
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
           npx cap sync android
 
       - name: Gerar APK
@@ -41,4 +54,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: CapCut-2-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: capcut2-preparado-para-apk/capcut2-apk-build/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
