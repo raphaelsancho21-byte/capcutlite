@@ -1,8 +1,0 @@
-{
-  "appId": "com.capcut2.light",
-  "appName": "CapCut 2",
-  "webDir": "www",
-  "server": {
-    "androidScheme": "https"
-  }
-}
