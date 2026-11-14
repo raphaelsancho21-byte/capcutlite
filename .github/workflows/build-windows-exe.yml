@@ -1,0 +1,50 @@
+name: Criar EXE Windows do CapCut 2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'capcut2-windows/**'
+      - '.github/workflows/build-windows-exe.yml'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Baixar projeto
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Compilar aplicativo Windows nativo
+        shell: pwsh
+        run: |
+          dotnet publish capcut2-windows/CapCut2.Windows/CapCut2.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o windows-release
+
+      - name: Incluir FFmpeg para cortes MP4
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile "ffmpeg.zip"
+          Expand-Archive -Path "ffmpeg.zip" -DestinationPath "ffmpeg-unpacked"
+          $ff = Get-ChildItem "ffmpeg-unpacked" -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
+          if (-not $ff) { throw "ffmpeg.exe não encontrado no pacote" }
+          Copy-Item $ff.FullName "windows-release/ffmpeg.exe"
+
+      - name: Verificar executável
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "windows-release/CapCut2.exe")) { throw "CapCut2.exe não foi produzido" }
+          if (-not (Test-Path "windows-release/ffmpeg.exe")) { throw "ffmpeg.exe não foi incluído" }
+
+      - name: Disponibilizar EXE Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: CapCut2-Windows-EXE
+          path: windows-release/
+          if-no-files-found: error
