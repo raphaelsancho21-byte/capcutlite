@@ -199,7 +199,39 @@ public class MainActivity extends Activity {
         startActivityForResult(intent,PICK_VIDEO);
     }
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;
-        if(request==PICK_VIDEO){try{videoUri=data.getData();if(data.getFlags()!=0 && (data.getFlags() & Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)!=0){try{getContentResolver().takePersistableUriPermission(videoUri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(SecurityException ignored){}}MediaMetadataRetriever mmr=new MediaMetadataRetriever();mmr.setDataSource(this,videoUri);String d=mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);durationMs=Long.parseLong(d);mmr.release();startMs=0;endMs=durationMs;fileName.setText(videoUri.getLastPathSegment());beats.clear();refreshBeats();refreshCuts();timeline.setMax((int)Math.min(durationMs,Integer.MAX_VALUE));preview.setVideoURI(videoUri);preview.requestFocus();status("Abrindo vídeo nativo...");}catch(Exception ex){status("Falha ao abrir mídia: "+ex.getMessage());}}
+        if(request==PICK_VIDEO){
+            final Uri selected=data.getData();
+            if(selected==null)return;
+            preview.pause();
+            videoUri=null;
+            fileName.setText(selected.getLastPathSegment());
+            status("Carregando informações do vídeo...");
+            io.execute(()->{
+                try{
+                    MediaMetadataRetriever mmr=new MediaMetadataRetriever();
+                    long foundDuration;
+                    try{
+                        mmr.setDataSource(this,selected);
+                        String d=mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                        foundDuration=d==null?0:Long.parseLong(d);
+                    }finally{mmr.release();}
+                    if(foundDuration<=0)throw new IllegalStateException("Duração não disponível");
+                    main.post(()->{
+                        videoUri=selected;
+                        durationMs=foundDuration;
+                        startMs=0;endMs=durationMs;
+                        beats.clear();refreshBeats();refreshCuts();
+                        timeline.setMax((int)Math.min(durationMs,Integer.MAX_VALUE));
+                        timeline.setProgress(0);
+                        clock.setText(format(0)+" / "+format(durationMs));
+                        preview.setVideoURI(selected);
+                        status("Preparando reprodução...");
+                    });
+                }catch(Exception ex){
+                    main.post(()->status("Falha ao abrir o vídeo: "+ex.getMessage()));
+                }
+            });
+        }
         if(request==SAVE_MP4){Uri destination=data.getData();long from=startMs*1000,to=endMs*1000;boolean audio=keepSound.isChecked();exportBusy=true;status("Exportando MP4...");io.execute(()->{try{export(destination,from,to,audio);main.post(()->{exportBusy=false;status("MP4 exportado com sucesso!");});}catch(Exception ex){main.post(()->{exportBusy=false;status("Erro na exportação: "+ex.getMessage());});}});}
     }
     /** Fast remux: retains original compression, avoiding expensive full-frame re-encoding. */
