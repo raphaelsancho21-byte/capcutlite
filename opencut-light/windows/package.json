@@ -1,0 +1,40 @@
+{
+  "name": "capcut2-opencut-light-windows",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Windows desktop launcher for MIT-licensed OpenCut Classic",
+  "main": "main.cjs",
+  "scripts": {
+    "dist": "electron-builder --win portable --x64"
+  },
+  "build": {
+    "appId": "com.capcut2.opencutlight",
+    "productName": "CapCut 2 Light",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "web/**/*",
+      "LICENSE-OpenCut"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "CapCut2-Light-Windows.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  }
+}
