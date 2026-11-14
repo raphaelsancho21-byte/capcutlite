@@ -1,0 +1,99 @@
+<Window x:Class="CapCut2.Windows.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="CapCut 2 — Windows Light" Height="780" Width="1120"
+        MinHeight="650" MinWidth="760" WindowStartupLocation="CenterScreen">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" MinHeight="270"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock FontSize="23" FontWeight="SemiBold" Text="CapCut 2" />
+                <TextBlock FontSize="11" Foreground="#87DCCB" Margin="14,10,0,0" Text="WINDOWS NATIVE  ·  LIGHT"/>
+            </StackPanel>
+            <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Content="＋ Importar vídeo" Click="Open_Click" Background="#167B73"/>
+        </DockPanel>
+
+        <Border Grid.Row="1" Background="#080A0E" CornerRadius="12" ClipToBounds="True">
+            <Grid>
+                <MediaElement x:Name="Player" Stretch="Uniform" LoadedBehavior="Manual"
+                              UnloadedBehavior="Close" MediaOpened="Player_MediaOpened"
+                              MediaEnded="Player_MediaEnded" MediaFailed="Player_MediaFailed"/>
+                <TextBlock x:Name="EmptyHint" Text="Importe um vídeo MP4, MOV ou WebM para começar"
+                           Foreground="#AAB8C7" FontSize="17" HorizontalAlignment="Center"
+                           VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Background="#20232C" CornerRadius="12" Padding="12" Margin="0,10,0,10">
+            <StackPanel>
+                <DockPanel Margin="4,0,4,7">
+                    <TextBlock x:Name="MediaName" Text="Nenhum vídeo selecionado" Foreground="#B1BDCD"
+                               TextTrimming="CharacterEllipsis" FontSize="12" MaxWidth="720"/>
+                    <TextBlock x:Name="ClockText" DockPanel.Dock="Right" HorizontalAlignment="Right"
+                               Text="00:00.000 / 00:00.000" FontSize="13" Foreground="#D2DCE9"/>
+                </DockPanel>
+                <Slider x:Name="Timeline" Minimum="0" Maximum="1" ValueChanged="Timeline_ValueChanged"
+                        PreviewMouseLeftButtonDown="Timeline_MouseDown"
+                        PreviewMouseLeftButtonUp="Timeline_MouseUp" Margin="3,2,3,7"/>
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                        <Button Content="−1 segundo" Click="Back_Click"/>
+                        <Button x:Name="PlayButton" Content="▶ Reproduzir" Click="Play_Click"/>
+                        <Button Content="+1 segundo" Click="Forward_Click"/>
+                        <Button Content="Marcar batida" Click="Beat_Click"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                        <TextBlock Text="Enquadramento:" Margin="8,10,2,0" Foreground="#C2CCDB"/>
+                        <ComboBox x:Name="FitChoice" SelectionChanged="FitChoice_Changed" SelectedIndex="0">
+                            <ComboBoxItem Content="Ajustar"/>
+                            <ComboBoxItem Content="Preencher"/>
+                            <ComboBoxItem Content="Esticar"/>
+                        </ComboBox>
+                    </StackPanel>
+                </DockPanel>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="#20232C" CornerRadius="12" Padding="12" Margin="0,0,5,0">
+                <StackPanel>
+                    <TextBlock Text="✂  Cortar vídeo" FontWeight="SemiBold" FontSize="16" Margin="5,0,0,8"/>
+                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0"><TextBlock Text="Início (segundos)" Margin="5,0,0,2" Foreground="#B9C5D2"/>
+                            <TextBox x:Name="StartBox" Text="0.000"/></StackPanel>
+                        <StackPanel Grid.Column="1"><TextBlock Text="Fim (segundos)" Margin="5,0,0,2" Foreground="#B9C5D2"/>
+                            <TextBox x:Name="EndBox" Text="0.000"/></StackPanel>
+                    </Grid>
+                    <WrapPanel Margin="0,6,0,0">
+                        <Button Content="Início = cursor" Click="Start_Click"/>
+                        <Button Content="Fim = cursor" Click="End_Click"/>
+                    </WrapPanel>
+                    <TextBlock Text="Corte rápido sem recodificação. O início pode seguir o keyframe anterior."
+                               Margin="5,6,0,0" Foreground="#9CAABB" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Background="#20232C" CornerRadius="12" Padding="12" Margin="5,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="♫  Batidas e exportação" FontSize="16" FontWeight="SemiBold" Margin="5,0,0,8"/>
+                    <TextBlock x:Name="BeatsText" Text="Nenhuma batida marcada" Margin="5,0,0,6"
+                               Foreground="#B8C4D4" TextTrimming="CharacterEllipsis"/>
+                    <CheckBox x:Name="KeepAudio" IsChecked="True" Content="Manter áudio original"
+                              Margin="5,3,0,6" Foreground="White"/>
+                    <WrapPanel>
+                        <Button Content="Limpar batidas" Click="ClearBeats_Click"/>
+                        <Button Content="Exportar MP4" Click="Export_Click" Background="#167B73"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="StatusText" Foreground="#8EE1B9" Text="Pronto para importar um vídeo."
+                               Margin="5,7,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
