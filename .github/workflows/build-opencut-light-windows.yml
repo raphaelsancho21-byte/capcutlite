@@ -9,6 +9,10 @@ on:
       - 'opencut-classic/apps/web/src/media/**'
       - '.github/workflows/build-opencut-light-windows.yml'
 
+concurrency:
+  group: opencut-light-windows-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   windows-editor:
     runs-on: windows-latest
