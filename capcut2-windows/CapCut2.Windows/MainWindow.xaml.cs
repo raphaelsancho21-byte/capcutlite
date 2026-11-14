@@ -198,9 +198,10 @@ public partial class MainWindow : Window
         var inv = CultureInfo.InvariantCulture;
         var a = (StartBox.Text ?? "").Replace(',', '.');
         var b = (EndBox.Text ?? "").Replace(',', '.');
-        bool ok = double.TryParse(a, NumberStyles.Float, inv, out start)
-                && double.TryParse(b, NumberStyles.Float, inv, out end)
-                && start >= 0 && end > start && end <= duration.TotalSeconds + 0.01;
+        bool startValid = double.TryParse(a, NumberStyles.Float, inv, out start);
+        bool endValid = double.TryParse(b, NumberStyles.Float, inv, out end);
+        bool ok = startValid && endValid && start >= 0
+                && end > start && end <= duration.TotalSeconds + 0.01;
         if (!ok) Status("Corte inválido: confira os segundos de início e fim.");
         return ok;
     }
