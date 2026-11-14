@@ -31,6 +31,8 @@ public partial class MainWindow : Window
         playbackTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
         playbackTimer.Tick += (_, _) => UpdatePlayback();
         Closing += (_, _) => { playbackTimer.Stop(); Player.Stop(); };
+        SizeChanged += (_, _) => RefreshTrackPreview();
+        Loaded += async (_, _) => await UpdateService.CheckAsync(this, silent: true);
     }
 
     private static string TimeLabel(TimeSpan position) =>
@@ -55,6 +57,12 @@ public partial class MainWindow : Window
         sourceFile = picker.FileName;
         duration = TimeSpan.Zero;
         MediaName.Text = Path.GetFileName(sourceFile);
+        MediaList.Items.Clear();
+        MediaList.Items.Add(Path.GetFileName(sourceFile));
+        ClipText.Text = Path.GetFileName(sourceFile);
+        VideoTrackClip.Visibility = Visibility.Visible;
+        AudioTrackClip.Visibility = Visibility.Visible;
+        RefreshTrackPreview();
         EmptyHint.Visibility = Visibility.Collapsed;
         Player.Source = new Uri(sourceFile);
         Status("Abrindo vídeo...");
@@ -68,6 +76,7 @@ public partial class MainWindow : Window
             return;
         }
         duration = Player.NaturalDuration.TimeSpan;
+        RefreshTrackPreview();
         StartBox.Text = "0.000";
         EndBox.Text = duration.TotalSeconds.ToString("F3", CultureInfo.InvariantCulture);
         Timeline.Maximum = duration.TotalMilliseconds;
@@ -301,4 +310,26 @@ public partial class MainWindow : Window
             throw new InvalidOperationException(errors.Length > 500 ? errors[..500] : errors);
         return process.ExitCode;
     }
+    private void MediaList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sourceFile == null || MediaList.SelectedIndex < 0) return;
+        Status("Mídia selecionada: " + Path.GetFileName(sourceFile));
+    }
+
+    private void RefreshTrackPreview()
+    {
+        if (VideoTrackClip == null || AudioTrackClip == null) return;
+        double available = Math.Max(0, ActualWidth - 690);
+        if (available < 120) available = 360;
+        VideoTrackClip.Width = available;
+        AudioTrackClip.Width = available;
+    }
+
+    private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateButton.IsEnabled = false;
+        try { await UpdateService.CheckAsync(this, silent: false); }
+        finally { UpdateButton.IsEnabled = true; }
+    }
+
 }
