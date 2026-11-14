@@ -1,0 +1,94 @@
+name: Build CapCut 2 Light Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [capcut2-opencut-light]
+    paths:
+      - 'opencut-light/windows/**'
+      - 'opencut-classic/apps/web/src/media/**'
+      - '.github/workflows/build-opencut-light-windows.yml'
+
+jobs:
+  windows-editor:
+    runs-on: windows-latest
+    timeout-minutes: 55
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout OpenCut Light
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.18
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify MIT license and source
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "opencut-classic/LICENSE")) { throw "OpenCut Classic import missing" }
+          if (-not (Test-Path "opencut-classic/apps/web/package.json")) { throw "Web project missing" }
+
+      - name: Install OpenCut dependencies
+        working-directory: opencut-classic
+        run: bun install --frozen-lockfile
+
+      - name: Build OpenCut Classic web editor
+        working-directory: opencut-classic/apps/web
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: bun run build
+
+      - name: Prepare standalone server
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = 'opencut-classic/apps/web/.next/standalone'
+          if (-not (Test-Path $out)) { throw "Next standalone output missing" }
+          New-Item -ItemType Directory -Force -Path "opencut-light/windows/web" | Out-Null
+          Copy-Item -Path "$out/*" -Destination "opencut-light/windows/web" -Recurse -Force
+          $server = Get-ChildItem "opencut-light/windows/web" -Filter "server.js" -Recurse | Select-Object -First 1
+          if (-not $server) { throw "Next standalone server.js missing" }
+          # Monorepo output keeps apps/web as its relative app root.
+          if ($server.DirectoryName -ne (Resolve-Path "opencut-light/windows/web").Path) {
+            $root = $server.DirectoryName
+          } else {
+            $root = (Resolve-Path "opencut-light/windows/web").Path
+          }
+          $web = "opencut-classic/apps/web"
+          New-Item -ItemType Directory -Force -Path (Join-Path $root ".next/static") | Out-Null
+          Copy-Item -Path "$web/.next/static/*" -Destination (Join-Path $root ".next/static") -Recurse -Force
+          if (Test-Path "$web/public") {
+            New-Item -ItemType Directory -Force -Path (Join-Path $root "public") | Out-Null
+            Copy-Item "$web/public/*" -Destination (Join-Path $root "public") -Recurse -Force
+          }
+          if ($root -ne (Resolve-Path "opencut-light/windows/web").Path) {
+            # Desktop launcher expects web/server.js, while keeping monorepo node_modules tree.
+            $entry = $server.FullName.Substring((Resolve-Path "opencut-light/windows/web").Path.Length+1).Replace('\','/')
+            Set-Content -Path "opencut-light/windows/server-path.txt" -Value $entry
+          } else {
+            Set-Content -Path "opencut-light/windows/server-path.txt" -Value "server.js"
+          }
+
+      - name: Copy upstream license
+        shell: pwsh
+        run: Copy-Item "opencut-classic/LICENSE" "opencut-light/windows/LICENSE-OpenCut"
+
+      - name: Package Windows portable EXE
+        working-directory: opencut-light/windows
+        run: |
+          npm install --no-audit --no-fund
+          npx electron-builder --win portable --x64
+
+      - name: Upload CapCut 2 Light executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: CapCut2-Light-Windows-EXE
+          path: opencut-light/windows/dist/*.exe
+          if-no-files-found: error
