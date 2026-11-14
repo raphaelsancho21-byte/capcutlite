@@ -6,33 +6,6 @@ import type { RetimeConfig } from "@/timeline";
 const RMS_ANALYSIS_WINDOW_SECONDS = 0.02;
 const DEFAULT_SOURCE_WAVEFORM_BUCKET_SIZE = 128;
 
-function computePeakBuckets({
-	buffer,
-	buckets,
-}: {
-	buffer: AudioBuffer;
-	buckets: SampleBucket[];
-}): number[] {
-	const channels = buffer.numberOfChannels;
-	const channelData: Float32Array[] = Array.from({ length: channels }, (_, c) =>
-		buffer.getChannelData(c),
-	);
-
-	return buckets.map(({ bucketStart, bucketEnd }) => {
-		let peak = 0;
-		for (let c = 0; c < channels; c++) {
-			const data = channelData[c];
-			for (let j = bucketStart; j < bucketEnd; j++) {
-				const abs = Math.abs(data[j] ?? 0);
-				if (abs > peak) {
-					peak = abs;
-				}
-			}
-		}
-		return peak;
-	});
-}
-
 export interface SampleBucket {
 	bucketStart: number;
 	bucketEnd: number;
