@@ -37,8 +37,12 @@ function waitForServer(url, deadline = Date.now() + 90000) {
 }
 
 async function start() {
-  const root = path.join(__dirname, "web");
-  const entry = path.join(root, "server.js");
+  const bundle = path.join(__dirname, "web");
+  const entryRelative = fs.readFileSync(path.join(__dirname, "server-path.txt"), "utf8").trim();
+  if (!entryRelative || entryRelative.includes("..") || path.isAbsolute(entryRelative))
+    throw new Error("Invalid server entry.");
+  const entry = path.join(bundle, entryRelative);
+  const root = path.dirname(entry);
   if (!fs.existsSync(entry)) {
     throw new Error("Missing OpenCut server.js in Windows package.");
   }
