@@ -1,0 +1,53 @@
+name: Importar OpenCut Classic para CapCut 2 Light
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - capcut2-opencut-light
+    paths:
+      - 'opencut-light/**'
+      - '.github/workflows/import-opencut-classic.yml'
+
+jobs:
+  import-upstream:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout da branch isolada
+        uses: actions/checkout@v4
+        with:
+          ref: capcut2-opencut-light
+          persist-credentials: true
+
+      - name: Baixar OpenCut Classic original
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch main https://github.com/OpenCut-app/OpenCut-classic.git "${RUNNER_TEMP}/opencut-classic-original"
+          git -C "${RUNNER_TEMP}/opencut-classic-original" rev-parse HEAD > opencut-light/UPSTREAM_COMMIT.txt
+          mkdir -p opencut-classic
+          rsync -a --delete --exclude='.git' "${RUNNER_TEMP}/opencut-classic-original/" opencut-classic/
+          test -f opencut-classic/LICENSE
+          test -f opencut-classic/apps/web/package.json
+
+      - name: Aplicar otimizações do CapCut 2 Light
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp opencut-light/overrides/apps/web/src/media/thumbnail.ts opencut-classic/apps/web/src/media/thumbnail.ts
+          cp opencut-light/overrides/apps/web/src/media/waveform-summary.ts opencut-classic/apps/web/src/media/waveform-summary.ts
+          test -s opencut-classic/apps/web/src/media/waveform-summary.ts
+
+      - name: Registrar importação com atribuição MIT
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add opencut-classic opencut-light/UPSTREAM_COMMIT.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Import MIT-licensed OpenCut Classic with lightweight media optimizations"
+            git push origin HEAD:capcut2-opencut-light
+          fi
